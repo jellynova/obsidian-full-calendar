@@ -80,3 +80,76 @@
 	border-color: black !important;
 	border-width: 1px !important;
 }
+
+/* Agenda Block Styles */
+.fc-agenda-container {
+	padding: 8px 0;
+}
+
+.fc-agenda-day-header {
+	font-weight: 600;
+	font-size: 0.9em;
+	padding: 12px 0 6px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	margin-bottom: 4px;
+	color: var(--text-normal);
+}
+
+.fc-agenda-day-header:first-child {
+	padding-top: 0;
+}
+
+.fc-agenda-event {
+	display: flex;
+	align-items: center;
+	padding: 6px 8px;
+	margin: 2px 0;
+	border-radius: 4px;
+	cursor: pointer;
+	gap: 10px;
+}
+
+.fc-agenda-event:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.fc-agenda-calendar-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.fc-agenda-time {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	min-width: 110px;
+	flex-shrink: 0;
+}
+
+.fc-agenda-time.fc-agenda-allday {
+	font-style: italic;
+}
+
+.fc-agenda-title {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fc-agenda-calendar-name {
+	font-size: 0.75em;
+	color: var(--text-muted);
+	background-color: var(--background-secondary);
+	padding: 2px 6px;
+	border-radius: 3px;
+	flex-shrink: 0;
+}
+
+.fc-agenda-empty {
+	color: var(--text-muted);
+	font-style: italic;
+	padding: 16px 8px;
+	text-align: center;
+}

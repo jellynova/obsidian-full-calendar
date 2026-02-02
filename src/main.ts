@@ -1,4 +1,10 @@
-import { MarkdownView, Notice, Plugin, TFile } from "obsidian";
+import {
+    MarkdownPostProcessorContext,
+    MarkdownView,
+    Notice,
+    Plugin,
+    TFile,
+} from "obsidian";
 import {
     CalendarView,
     FULL_CALENDAR_SIDEBAR_VIEW_TYPE,
@@ -19,6 +25,7 @@ import FullNoteCalendar from "./calendars/FullNoteCalendar";
 import DailyNoteCalendar from "./calendars/DailyNoteCalendar";
 import ICSCalendar from "./calendars/ICSCalendar";
 import CalDAVCalendar from "./calendars/CalDAVCalendar";
+import { AgendaRenderer, parseAgendaOptions } from "./ui/agenda";
 
 export default class FullCalendarPlugin extends Plugin {
     settings: FullCalendarSettings = DEFAULT_SETTINGS;
@@ -187,6 +194,48 @@ export default class FullCalendarPlugin extends Plugin {
             display: "Full Calendar",
             defaultMod: true,
         });
+
+        // Register fc-agenda code block processor
+        this.registerMarkdownCodeBlockProcessor(
+            "fc-agenda",
+            async (
+                source: string,
+                el: HTMLElement,
+                ctx: MarkdownPostProcessorContext
+            ) => {
+                // Ensure cache is initialized
+                if (!this.cache.initialized) {
+                    await this.cache.populate();
+                }
+
+                const options = parseAgendaOptions(source);
+                const renderer = new AgendaRenderer(
+                    el,
+                    this.cache,
+                    this.app,
+                    options,
+                    ctx.sourcePath,
+                    this.settings
+                );
+
+                renderer.render();
+
+                // Re-render when events change
+                const updateCallback = () => renderer.render();
+                this.cache.on("update", updateCallback);
+
+                // Cleanup when the markdown view is unloaded
+                const unloadHandler = () => {
+                    this.cache.off("update", updateCallback);
+                };
+
+                // Use the component's register method for cleanup
+                ctx.addChild({
+                    onload: () => {},
+                    onunload: unloadHandler,
+                } as any);
+            }
+        );
     }
 
     onunload() {

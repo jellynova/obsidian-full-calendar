@@ -27,6 +27,7 @@ export interface FullCalendarSettings {
     };
     timeFormat24h: boolean;
     clickToCreateEventFromMonthView: boolean;
+    meetingNotesFolder: string;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     },
     timeFormat24h: false,
     clickToCreateEventFromMonthView: true,
+    meetingNotesFolder: "",
 };
 
 const WEEKDAYS = [
@@ -244,6 +246,21 @@ export class FullCalendarSettingTab extends PluginSettingTab {
                     this.plugin.settings.clickToCreateEventFromMonthView = val;
                     await this.plugin.saveSettings();
                 });
+            });
+
+        containerEl.createEl("h2", { text: "Meeting Notes" });
+        new Setting(containerEl)
+            .setName("Meeting notes folder")
+            .setDesc(
+                "Folder where meeting notes will be created for external calendar events (ICS, CalDAV). Leave empty for vault root."
+            )
+            .addText((text) => {
+                text.setPlaceholder("e.g., Meetings")
+                    .setValue(this.plugin.settings.meetingNotesFolder)
+                    .onChange(async (value) => {
+                        this.plugin.settings.meetingNotesFolder = value;
+                        await this.plugin.saveData(this.plugin.settings);
+                    });
             });
 
         containerEl.createEl("h2", { text: "Manage Calendars" });

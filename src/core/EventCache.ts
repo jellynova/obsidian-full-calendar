@@ -1,5 +1,7 @@
 import { Notice, TFile } from "obsidian";
 import equal from "deep-equal";
+import { DateTime } from "luxon";
+import { rrulestr } from "rrule";
 
 import { Calendar } from "../calendars/Calendar";
 import { EditableCalendar } from "../calendars/EditableCalendar";
@@ -599,6 +601,195 @@ export default class EventCache {
                 });
             }
         });
+    }
+
+    /**
+     * Get all events that occur within a date range, expanding recurring events.
+     * @param startDate Start date in YYYY-MM-DD format
+     * @param endDate End date in YYYY-MM-DD format (inclusive)
+     * @param calendarFilter Optional array of calendar names to filter by
+     * @returns Array of events with their occurrence dates and calendar info
+     */
+    getEventsForDateRange(
+        startDate: string,
+        endDate: string,
+        calendarFilter?: string[] | null
+    ): Array<{
+        event: OFCEvent;
+        id: string;
+        calendar: Calendar;
+        occurrenceDate: string;
+    }> {
+        const results: Array<{
+            event: OFCEvent;
+            id: string;
+            calendar: Calendar;
+            occurrenceDate: string;
+        }> = [];
+
+        const rangeStart = DateTime.fromISO(startDate).startOf("day");
+        const rangeEnd = DateTime.fromISO(endDate).endOf("day");
+
+        for (const [calId, calendar] of this.calendars.entries()) {
+            // Apply calendar filter if provided
+            if (
+                calendarFilter &&
+                calendarFilter.length > 0 &&
+                !calendarFilter.some(
+                    (name) =>
+                        calendar.name?.toLowerCase() === name.toLowerCase()
+                )
+            ) {
+                continue;
+            }
+
+            const storedEvents = this.store.getEventsInCalendar(calendar);
+
+            for (const { event, id } of storedEvents) {
+                const occurrences = this.getEventOccurrencesInRange(
+                    event,
+                    rangeStart,
+                    rangeEnd
+                );
+
+                for (const occurrenceDate of occurrences) {
+                    results.push({
+                        event,
+                        id,
+                        calendar,
+                        occurrenceDate,
+                    });
+                }
+            }
+        }
+
+        // Sort by occurrence date, then by start time
+        results.sort((a, b) => {
+            const dateCompare = a.occurrenceDate.localeCompare(
+                b.occurrenceDate
+            );
+            if (dateCompare !== 0) return dateCompare;
+
+            // Compare start times (all-day events without times go to the top)
+            const aTime =
+                !a.event.allDay && "startTime" in a.event
+                    ? a.event.startTime || "00:00"
+                    : "00:00";
+            const bTime =
+                !b.event.allDay && "startTime" in b.event
+                    ? b.event.startTime || "00:00"
+                    : "00:00";
+            return aTime.localeCompare(bTime);
+        });
+
+        return results;
+    }
+
+    /**
+     * Get all occurrences of an event within a date range.
+     * @param event The event to check
+     * @param rangeStart Start of the range
+     * @param rangeEnd End of the range
+     * @returns Array of occurrence dates in YYYY-MM-DD format
+     */
+    private getEventOccurrencesInRange(
+        event: OFCEvent,
+        rangeStart: DateTime,
+        rangeEnd: DateTime
+    ): string[] {
+        const occurrences: string[] = [];
+
+        if (event.type === "single") {
+            // Single event - check if it falls within range
+            const eventDate = DateTime.fromISO(event.date);
+            if (eventDate >= rangeStart && eventDate <= rangeEnd) {
+                occurrences.push(event.date);
+            }
+        } else if (event.type === "recurring") {
+            // Weekly recurring event
+            const daysOfWeek = event.daysOfWeek || [];
+            const DAYS = "UMTWRFS";
+
+            // Convert day strings to day numbers (0 = Sunday)
+            const dayNumbers = daysOfWeek.map((d) => DAYS.indexOf(d));
+
+            // Iterate through each day in the range
+            let current = rangeStart;
+            while (current <= rangeEnd) {
+                const dayOfWeek = current.weekday % 7; // Luxon uses 1-7 (Mon-Sun), convert to 0-6 (Sun-Sat)
+
+                if (dayNumbers.includes(dayOfWeek)) {
+                    // Check if within recurrence bounds
+                    const startRecur = event.startRecur
+                        ? DateTime.fromISO(event.startRecur)
+                        : null;
+                    const endRecur = event.endRecur
+                        ? DateTime.fromISO(event.endRecur)
+                        : null;
+
+                    if (
+                        (!startRecur || current >= startRecur) &&
+                        (!endRecur || current <= endRecur)
+                    ) {
+                        occurrences.push(current.toISODate());
+                    }
+                }
+
+                current = current.plus({ days: 1 });
+            }
+        } else if (event.type === "rrule") {
+            // RRule event - use rrule library to expand occurrences
+            try {
+                const dtstart = DateTime.fromISO(event.startDate);
+                const rule = rrulestr(event.rrule, {
+                    dtstart: dtstart.toJSDate(),
+                });
+
+                // Get occurrences within range
+                const ruleOccurrences = rule.between(
+                    rangeStart.toJSDate(),
+                    rangeEnd.plus({ days: 1 }).toJSDate(),
+                    true
+                );
+
+                // Filter out skipped dates
+                const skipDates = new Set(event.skipDates || []);
+
+                for (const occurrence of ruleOccurrences) {
+                    const dateStr = DateTime.fromJSDate(occurrence).toISODate();
+                    if (!skipDates.has(dateStr)) {
+                        occurrences.push(dateStr);
+                    }
+                }
+            } catch (e) {
+                console.error("FC: Error parsing rrule", e);
+            }
+        }
+
+        return occurrences;
+    }
+
+    /**
+     * Get information about an event for the agenda/editing, including non-editable events.
+     * Unlike getInfoForEditableEvent, this works for all events including remote ones.
+     * @param eventId ID of the event
+     * @returns Event info with calendar, or null if not found
+     */
+    getInfoForEditingEvent(eventId: string): {
+        event: OFCEvent;
+        calendar: Calendar;
+    } | null {
+        const details = this.store.getEventDetails(eventId);
+        if (!details) {
+            return null;
+        }
+        const { calendarId } = details;
+        const calendar = this.calendars.get(calendarId);
+        const event = this.store.getEventById(eventId);
+        if (!calendar || !event) {
+            return null;
+        }
+        return { event, calendar };
     }
 
     get _storeForTest() {

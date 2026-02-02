@@ -10,7 +10,7 @@ import {
     toEventInput,
 } from "./interop";
 import { renderOnboarding } from "./onboard";
-import { openFileForEvent } from "./actions";
+import { openFileForEvent, openOrCreateMeetingNote } from "./actions";
 import { launchCreateModal, launchEditModal } from "./event_modal";
 import { isTask, toggleTask, unmakeTask } from "src/ui/tasks";
 import { UpdateViewCallback } from "src/core/EventCache";
@@ -126,17 +126,47 @@ export class CalendarView extends ItemView {
             forceNarrow: this.inSidebar,
             eventClick: async (info) => {
                 try {
+                    const isEditable = this.plugin.cache.isEventEditable(
+                        info.event.id
+                    );
+
                     if (
                         info.jsEvent.getModifierState("Control") ||
                         info.jsEvent.getModifierState("Meta")
                     ) {
+                        // Ctrl/Cmd + Click: Open source file for editable events
+                        if (isEditable) {
+                            await openFileForEvent(
+                                this.plugin.cache,
+                                this.app,
+                                info.event.id
+                            );
+                        } else {
+                            // For non-editable events, create/open meeting note
+                            await openOrCreateMeetingNote(
+                                this.app,
+                                this.plugin.cache,
+                                info.event.id,
+                                this.plugin.settings.meetingNotesFolder,
+                                info.event.start || undefined
+                            );
+                        }
+                    } else if (isEditable) {
+                        // Regular click on editable event: Open source file
                         await openFileForEvent(
                             this.plugin.cache,
                             this.app,
                             info.event.id
                         );
                     } else {
-                        launchEditModal(this.plugin, info.event.id);
+                        // Regular click on non-editable (external) event: Create/open meeting note
+                        await openOrCreateMeetingNote(
+                            this.app,
+                            this.plugin.cache,
+                            info.event.id,
+                            this.plugin.settings.meetingNotesFolder,
+                            info.event.start || undefined
+                        );
                     }
                 } catch (e) {
                     if (e instanceof Error) {
@@ -263,11 +293,18 @@ export class CalendarView extends ItemView {
                         })
                     );
                 } else {
-                    menu.addItem((item) => {
-                        item.setTitle(
-                            "No actions available on remote events"
-                        ).setDisabled(true);
-                    });
+                    // Non-editable (remote) events
+                    menu.addItem((item) =>
+                        item.setTitle("Open meeting note").onClick(async () => {
+                            await openOrCreateMeetingNote(
+                                this.app,
+                                this.plugin.cache,
+                                e.id,
+                                this.plugin.settings.meetingNotesFolder,
+                                e.start || undefined
+                            );
+                        })
+                    );
                 }
 
                 menu.showAtMouseEvent(mouseEvent);
