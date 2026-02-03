@@ -1,5 +1,6 @@
 import {
     MarkdownPostProcessorContext,
+    MarkdownRenderChild,
     MarkdownView,
     Notice,
     Plugin,
@@ -27,7 +28,7 @@ import ICSCalendar from "./calendars/ICSCalendar";
 import CalDAVCalendar from "./calendars/CalDAVCalendar";
 import {
     AgendaRenderer,
-    TimelineRenderer,
+    EmbeddedCalendarRenderer,
     parseAgendaOptions,
 } from "./ui/agenda";
 
@@ -202,54 +203,77 @@ export default class FullCalendarPlugin extends Plugin {
         // Register fc-agenda code block processor
         this.registerMarkdownCodeBlockProcessor(
             "fc-agenda",
-            async (
+            (
                 source: string,
                 el: HTMLElement,
                 ctx: MarkdownPostProcessorContext
             ) => {
-                // Ensure cache is initialized
-                if (!this.cache.initialized) {
-                    await this.cache.populate();
-                }
+                const plugin = this;
 
-                const options = parseAgendaOptions(source);
+                // Create a MarkdownRenderChild for proper lifecycle management
+                const child = new (class extends MarkdownRenderChild {
+                    private renderer:
+                        | AgendaRenderer
+                        | EmbeddedCalendarRenderer
+                        | null = null;
+                    private updateCallback: (() => void) | null = null;
 
-                // Choose renderer based on view option
-                const renderer =
-                    options.view === "timeline"
-                        ? new TimelineRenderer(
-                              el,
-                              this.cache,
-                              this.app,
-                              options,
-                              ctx.sourcePath,
-                              this.settings
-                          )
-                        : new AgendaRenderer(
-                              el,
-                              this.cache,
-                              this.app,
-                              options,
-                              ctx.sourcePath,
-                              this.settings
-                          );
+                    async onload() {
+                        // Ensure cache is initialized
+                        if (!plugin.cache.initialized) {
+                            await plugin.cache.populate();
+                        }
 
-                renderer.render();
+                        const options = parseAgendaOptions(source);
 
-                // Re-render when events change
-                const updateCallback = () => renderer.render();
-                this.cache.on("update", updateCallback);
+                        // Choose renderer based on view option
+                        if (options.view === "timeline") {
+                            this.renderer = new EmbeddedCalendarRenderer(
+                                this.containerEl,
+                                plugin.cache,
+                                plugin.app,
+                                options,
+                                ctx.sourcePath,
+                                plugin.settings
+                            );
+                        } else {
+                            this.renderer = new AgendaRenderer(
+                                this.containerEl,
+                                plugin.cache,
+                                plugin.app,
+                                options,
+                                ctx.sourcePath,
+                                plugin.settings
+                            );
+                        }
 
-                // Cleanup when the markdown view is unloaded
-                const unloadHandler = () => {
-                    this.cache.off("update", updateCallback);
-                };
+                        this.renderer.render();
 
-                // Use the component's register method for cleanup
-                ctx.addChild({
-                    onload: () => {},
-                    onunload: unloadHandler,
-                } as any);
+                        // Re-render when events change
+                        this.updateCallback = () => {
+                            if (this.renderer) {
+                                this.renderer.render();
+                            }
+                        };
+                        plugin.cache.on("update", this.updateCallback);
+                    }
+
+                    onunload() {
+                        // Cleanup
+                        if (this.updateCallback) {
+                            plugin.cache.off("update", this.updateCallback);
+                        }
+                        if (
+                            this.renderer &&
+                            "destroy" in this.renderer &&
+                            typeof this.renderer.destroy === "function"
+                        ) {
+                            this.renderer.destroy();
+                        }
+                    }
+                })(el);
+
+                ctx.addChild(child);
             }
         );
     }

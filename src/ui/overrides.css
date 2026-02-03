@@ -301,3 +301,18 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
+/* Embedded Calendar Styles */
+.fc-embedded-container {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.fc-embedded-calendar {
+	height: 500px;
+}
+
+.fc-embedded-calendar .fc {
+	height: 100%;
+}
