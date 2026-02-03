@@ -25,7 +25,11 @@ import FullNoteCalendar from "./calendars/FullNoteCalendar";
 import DailyNoteCalendar from "./calendars/DailyNoteCalendar";
 import ICSCalendar from "./calendars/ICSCalendar";
 import CalDAVCalendar from "./calendars/CalDAVCalendar";
-import { AgendaRenderer, parseAgendaOptions } from "./ui/agenda";
+import {
+    AgendaRenderer,
+    TimelineRenderer,
+    parseAgendaOptions,
+} from "./ui/agenda";
 
 export default class FullCalendarPlugin extends Plugin {
     settings: FullCalendarSettings = DEFAULT_SETTINGS;
@@ -209,14 +213,26 @@ export default class FullCalendarPlugin extends Plugin {
                 }
 
                 const options = parseAgendaOptions(source);
-                const renderer = new AgendaRenderer(
-                    el,
-                    this.cache,
-                    this.app,
-                    options,
-                    ctx.sourcePath,
-                    this.settings
-                );
+
+                // Choose renderer based on view option
+                const renderer =
+                    options.view === "timeline"
+                        ? new TimelineRenderer(
+                              el,
+                              this.cache,
+                              this.app,
+                              options,
+                              ctx.sourcePath,
+                              this.settings
+                          )
+                        : new AgendaRenderer(
+                              el,
+                              this.cache,
+                              this.app,
+                              options,
+                              ctx.sourcePath,
+                              this.settings
+                          );
 
                 renderer.render();
 

@@ -28,6 +28,7 @@ export interface FullCalendarSettings {
     timeFormat24h: boolean;
     clickToCreateEventFromMonthView: boolean;
     meetingNotesFolder: string;
+    meetingNoteTemplate: string;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     timeFormat24h: false,
     clickToCreateEventFromMonthView: true,
     meetingNotesFolder: "",
+    meetingNoteTemplate: "",
 };
 
 const WEEKDAYS = [
@@ -259,6 +261,20 @@ export class FullCalendarSettingTab extends PluginSettingTab {
                     .setValue(this.plugin.settings.meetingNotesFolder)
                     .onChange(async (value) => {
                         this.plugin.settings.meetingNotesFolder = value;
+                        await this.plugin.saveData(this.plugin.settings);
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName("Meeting note template")
+            .setDesc(
+                "Path to a template file for meeting notes. Use variables: {{title}}, {{date}}, {{startTime}}, {{endTime}}, {{isAllDay}}. Leave empty for default (just the title)."
+            )
+            .addText((text) => {
+                text.setPlaceholder("e.g., Templates/Meeting.md")
+                    .setValue(this.plugin.settings.meetingNoteTemplate)
+                    .onChange(async (value) => {
+                        this.plugin.settings.meetingNoteTemplate = value;
                         await this.plugin.saveData(this.plugin.settings);
                     });
             });

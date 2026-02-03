@@ -205,7 +205,8 @@ export class AgendaRenderer {
                     this.cache,
                     eventInfo.id,
                     this.settings.meetingNotesFolder,
-                    occurrenceDate
+                    occurrenceDate,
+                    this.settings.meetingNoteTemplate
                 );
             } catch (e) {
                 console.error("FC Agenda: Error creating meeting note", e);

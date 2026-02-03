@@ -49,6 +49,31 @@ function sanitizeFilename(name: string): string {
 }
 
 /**
+ * Process a template string by replacing variables with event data.
+ * Supported variables: {{title}}, {{date}}, {{startTime}}, {{endTime}}, {{isAllDay}}
+ * @param template The template string
+ * @param variables Object containing variable values
+ * @returns Processed template string
+ */
+function processTemplate(
+    template: string,
+    variables: {
+        title: string;
+        date: string;
+        startTime: string;
+        endTime: string;
+        isAllDay: boolean;
+    }
+): string {
+    return template
+        .replace(/\{\{title\}\}/g, variables.title)
+        .replace(/\{\{date\}\}/g, variables.date)
+        .replace(/\{\{startTime\}\}/g, variables.startTime)
+        .replace(/\{\{endTime\}\}/g, variables.endTime)
+        .replace(/\{\{isAllDay\}\}/g, variables.isAllDay ? "true" : "false");
+}
+
+/**
  * Open or create a meeting note for an external calendar event.
  * The file will be named "[YYYY-MM-DD] [event title].md"
  * @param app Obsidian app instance
@@ -56,13 +81,15 @@ function sanitizeFilename(name: string): string {
  * @param eventId ID of the event
  * @param folder Folder to create meeting notes in (empty string for vault root)
  * @param occurrenceDate The specific occurrence date for recurring events
+ * @param templatePath Optional path to a template file
  */
 export async function openOrCreateMeetingNote(
     app: App,
     cache: EventCache,
     eventId: string,
     folder: string,
-    occurrenceDate?: Date
+    occurrenceDate?: Date,
+    templatePath?: string
 ): Promise<void> {
     const event = cache.getEventById(eventId);
     if (!event) {
@@ -108,8 +135,43 @@ export async function openOrCreateMeetingNote(
         }
         await leaf.openFile(existingFile);
     } else {
-        // File doesn't exist, create it with just the title
-        const content = `# ${event.title}\n`;
+        // File doesn't exist, create it
+        let content: string;
+
+        // Get event time info for template variables
+        const startTime =
+            !event.allDay && "startTime" in event && event.startTime
+                ? event.startTime
+                : "";
+        const endTime =
+            !event.allDay && "endTime" in event && event.endTime
+                ? event.endTime
+                : "";
+
+        // Try to use template if provided
+        if (templatePath) {
+            const templateFile = app.vault.getAbstractFileByPath(templatePath);
+            if (templateFile instanceof TFile) {
+                const templateContent = await app.vault.read(templateFile);
+                content = processTemplate(templateContent, {
+                    title: event.title,
+                    date: dateStr,
+                    startTime,
+                    endTime,
+                    isAllDay: event.allDay,
+                });
+            } else {
+                // Template not found, use default
+                console.warn(
+                    `FC: Template file not found at ${templatePath}, using default`
+                );
+                content = `# ${event.title}\n`;
+            }
+        } else {
+            // No template, use default (just the title)
+            content = `# ${event.title}\n`;
+        }
+
         const newFile = await app.vault.create(fullPath, content);
 
         let leaf = app.workspace.getMostRecentLeaf();

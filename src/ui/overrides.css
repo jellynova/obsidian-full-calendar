@@ -153,3 +153,151 @@
 	padding: 16px 8px;
 	text-align: center;
 }
+
+/* Timeline/Timetable View Styles */
+.fc-timeline-container {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.fc-timeline-header {
+	text-align: center;
+	padding: 8px;
+	font-weight: 600;
+	color: var(--text-accent);
+	background-color: var(--background-secondary);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.fc-timeline-allday-section {
+	display: flex;
+	border-bottom: 1px solid var(--background-modifier-border);
+	min-height: 30px;
+}
+
+.fc-timeline-allday-label {
+	width: 50px;
+	flex-shrink: 0;
+	font-size: 0.75em;
+	color: var(--text-muted);
+	padding: 6px 4px;
+	text-align: right;
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.fc-timeline-allday-events {
+	flex: 1;
+	padding: 4px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.fc-timeline-allday-event {
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 0.85em;
+	color: white;
+	cursor: pointer;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
+}
+
+.fc-timeline-allday-event:hover {
+	filter: brightness(1.1);
+}
+
+.fc-timeline-grid {
+	position: relative;
+	margin-left: 50px;
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.fc-timeline-hour-row {
+	position: absolute;
+	left: 0;
+	right: 0;
+	display: flex;
+	align-items: flex-start;
+}
+
+.fc-timeline-hour-label {
+	position: absolute;
+	left: -50px;
+	width: 46px;
+	text-align: right;
+	font-size: 0.75em;
+	color: var(--text-muted);
+	padding-right: 4px;
+	transform: translateY(-50%);
+}
+
+.fc-timeline-hour-line {
+	flex: 1;
+	height: 1px;
+	background-color: var(--background-modifier-border);
+}
+
+.fc-timeline-now-indicator {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background-color: var(--text-error);
+	z-index: 10;
+}
+
+.fc-timeline-now-arrow {
+	position: absolute;
+	left: -6px;
+	top: -4px;
+	width: 0;
+	height: 0;
+	border-top: 5px solid transparent;
+	border-bottom: 5px solid transparent;
+	border-left: 6px solid var(--text-error);
+}
+
+.fc-timeline-events-container {
+	position: absolute;
+	left: 4px;
+	right: 4px;
+	top: 0;
+	bottom: 0;
+}
+
+.fc-timeline-event {
+	position: absolute;
+	left: 0;
+	right: 0;
+	border-radius: 3px;
+	padding: 2px 6px;
+	color: white;
+	font-size: 0.85em;
+	overflow: hidden;
+	cursor: pointer;
+	box-sizing: border-box;
+	border-left: 3px solid rgba(0, 0, 0, 0.2);
+}
+
+.fc-timeline-event:hover {
+	filter: brightness(1.1);
+}
+
+.fc-timeline-event-title {
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.fc-timeline-event-time {
+	font-size: 0.8em;
+	opacity: 0.9;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

@@ -148,7 +148,8 @@ export class CalendarView extends ItemView {
                                 this.plugin.cache,
                                 info.event.id,
                                 this.plugin.settings.meetingNotesFolder,
-                                info.event.start || undefined
+                                info.event.start || undefined,
+                                this.plugin.settings.meetingNoteTemplate
                             );
                         }
                     } else if (isEditable) {
@@ -165,7 +166,8 @@ export class CalendarView extends ItemView {
                             this.plugin.cache,
                             info.event.id,
                             this.plugin.settings.meetingNotesFolder,
-                            info.event.start || undefined
+                            info.event.start || undefined,
+                            this.plugin.settings.meetingNoteTemplate
                         );
                     }
                 } catch (e) {
@@ -301,7 +303,8 @@ export class CalendarView extends ItemView {
                                 this.plugin.cache,
                                 e.id,
                                 this.plugin.settings.meetingNotesFolder,
-                                e.start || undefined
+                                e.start || undefined,
+                                this.plugin.settings.meetingNoteTemplate
                             );
                         })
                     );

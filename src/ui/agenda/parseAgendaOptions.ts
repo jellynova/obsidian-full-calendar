@@ -1,4 +1,9 @@
 /**
+ * View type for the agenda block.
+ */
+export type AgendaViewType = "list" | "timeline";
+
+/**
  * Options for the fc-agenda code block.
  */
 export interface AgendaOptions {
@@ -8,6 +13,8 @@ export interface AgendaOptions {
     days: number;
     /** Calendar names to filter by (null = show all calendars) */
     calendars: string[] | null;
+    /** View type: "list" (default) or "timeline" */
+    view: AgendaViewType;
 }
 
 /**
@@ -29,6 +36,7 @@ export function parseAgendaOptions(source: string): AgendaOptions {
         date: "auto",
         days: 1,
         calendars: null,
+        view: "list",
     };
 
     for (const line of lines) {
@@ -54,6 +62,11 @@ export function parseAgendaOptions(source: string): AgendaOptions {
                         .split(",")
                         .map((s) => s.trim())
                         .filter(Boolean);
+                }
+                break;
+            case "view":
+                if (value === "timeline" || value === "list") {
+                    options.view = value;
                 }
                 break;
         }
