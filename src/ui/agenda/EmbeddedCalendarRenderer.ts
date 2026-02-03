@@ -103,9 +103,9 @@ export class EmbeddedCalendarRenderer {
         this.container.empty();
         this.container.addClass("fc-embedded-container");
 
-        // Create calendar container with fixed height
+        // Create calendar container with fixed height and simplified styling
         const calendarEl = this.container.createDiv({
-            cls: "fc-embedded-calendar",
+            cls: "fc-embedded-calendar fc-embedded-simple",
         });
 
         // Resolve the initial date
@@ -117,6 +117,18 @@ export class EmbeddedCalendarRenderer {
 
         const sources = this.translateSources();
 
+        // Build work hours config if set
+        const workHoursConfig: {
+            slotMinTime?: string;
+            slotMaxTime?: string;
+        } = {};
+        if (this.settings.agendaWorkHoursStart) {
+            workHoursConfig.slotMinTime = this.settings.agendaWorkHoursStart;
+        }
+        if (this.settings.agendaWorkHoursEnd) {
+            workHoursConfig.slotMaxTime = this.settings.agendaWorkHoursEnd;
+        }
+
         this.calendar = renderCalendar(calendarEl, sources, {
             forceNarrow: true, // Use narrow/sidebar style
             initialView: {
@@ -125,6 +137,7 @@ export class EmbeddedCalendarRenderer {
             },
             firstDay: this.settings.firstDay,
             timeFormat24h: this.settings.timeFormat24h,
+            ...workHoursConfig,
             eventClick: async (info) => {
                 try {
                     const isEditable = this.cache.isEventEditable(

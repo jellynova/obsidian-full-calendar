@@ -116,16 +116,60 @@ interface CalendarSettingsProps {
     setting: Partial<CalendarInfo>;
     onColorChange: (s: string) => void;
     deleteCalendar: () => void;
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
+    canMoveUp?: boolean;
+    canMoveDown?: boolean;
 }
 
 export const CalendarSettingRow = ({
     setting,
     onColorChange,
     deleteCalendar,
+    onMoveUp,
+    onMoveDown,
+    canMoveUp = true,
+    canMoveDown = true,
 }: CalendarSettingsProps) => {
     const isCalDAV = setting.type === "caldav";
     return (
         <div className="setting-item">
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    marginRight: "4px",
+                }}
+            >
+                <button
+                    type="button"
+                    onClick={onMoveUp}
+                    disabled={!canMoveUp}
+                    style={{
+                        padding: "2px 6px",
+                        fontSize: "10px",
+                        opacity: canMoveUp ? 1 : 0.3,
+                        cursor: canMoveUp ? "pointer" : "default",
+                    }}
+                    title="Move up"
+                >
+                    ▲
+                </button>
+                <button
+                    type="button"
+                    onClick={onMoveDown}
+                    disabled={!canMoveDown}
+                    style={{
+                        padding: "2px 6px",
+                        fontSize: "10px",
+                        opacity: canMoveDown ? 1 : 0.3,
+                        cursor: canMoveDown ? "pointer" : "default",
+                    }}
+                    title="Move down"
+                >
+                    ▼
+                </button>
+            </div>
             <button
                 type="button"
                 onClick={deleteCalendar}
@@ -176,6 +220,16 @@ export class CalendarSettings extends React.Component<
         }));
     }
 
+    moveCalendar(fromIndex: number, toIndex: number) {
+        if (toIndex < 0 || toIndex >= this.state.sources.length) return;
+        this.setState((state) => {
+            const sources = [...state.sources];
+            const [removed] = sources.splice(fromIndex, 1);
+            sources.splice(toIndex, 0, removed);
+            return { sources, dirty: true };
+        });
+    }
+
     render() {
         return (
             <div style={{ width: "100%" }}>
@@ -183,6 +237,10 @@ export class CalendarSettings extends React.Component<
                     <CalendarSettingRow
                         key={idx}
                         setting={s}
+                        canMoveUp={idx > 0}
+                        canMoveDown={idx < this.state.sources.length - 1}
+                        onMoveUp={() => this.moveCalendar(idx, idx - 1)}
+                        onMoveDown={() => this.moveCalendar(idx, idx + 1)}
                         onColorChange={(color) =>
                             this.setState((state, props) => ({
                                 sources: [

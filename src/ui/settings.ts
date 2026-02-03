@@ -29,6 +29,12 @@ export interface FullCalendarSettings {
     clickToCreateEventFromMonthView: boolean;
     meetingNotesFolder: string;
     meetingNoteTemplate: string;
+    /** Work hours start time for embedded agenda (HH:mm format, e.g., "09:00") */
+    agendaWorkHoursStart: string;
+    /** Work hours end time for embedded agenda (HH:mm format, e.g., "17:00") */
+    agendaWorkHoursEnd: string;
+    /** Last viewed date in the main calendar view (ISO date string) */
+    lastViewedDate: string;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -43,6 +49,9 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     clickToCreateEventFromMonthView: true,
     meetingNotesFolder: "",
     meetingNoteTemplate: "",
+    agendaWorkHoursStart: "",
+    agendaWorkHoursEnd: "",
+    lastViewedDate: "",
 };
 
 const WEEKDAYS = [
@@ -275,6 +284,40 @@ export class FullCalendarSettingTab extends PluginSettingTab {
                     .setValue(this.plugin.settings.meetingNoteTemplate)
                     .onChange(async (value) => {
                         this.plugin.settings.meetingNoteTemplate = value;
+                        await this.plugin.saveData(this.plugin.settings);
+                    });
+            });
+
+        containerEl.createEl("h2", { text: "Embedded Agenda Settings" });
+        containerEl.createEl("p", {
+            text: "These settings only apply to the fc-agenda code blocks embedded in notes, not the sidebar calendar.",
+            cls: "setting-item-description",
+        });
+
+        new Setting(containerEl)
+            .setName("Work hours start")
+            .setDesc(
+                "Start time for the visible range in embedded agenda views (e.g., 09:00). Leave empty to show full day."
+            )
+            .addText((text) => {
+                text.setPlaceholder("09:00")
+                    .setValue(this.plugin.settings.agendaWorkHoursStart)
+                    .onChange(async (value) => {
+                        this.plugin.settings.agendaWorkHoursStart = value;
+                        await this.plugin.saveData(this.plugin.settings);
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName("Work hours end")
+            .setDesc(
+                "End time for the visible range in embedded agenda views (e.g., 17:00). Leave empty to show full day."
+            )
+            .addText((text) => {
+                text.setPlaceholder("17:00")
+                    .setValue(this.plugin.settings.agendaWorkHoursEnd)
+                    .onChange(async (value) => {
+                        this.plugin.settings.agendaWorkHoursEnd = value;
                         await this.plugin.saveData(this.plugin.settings);
                     });
             });

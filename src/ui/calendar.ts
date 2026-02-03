@@ -54,6 +54,14 @@ interface ExtraRenderProps {
     ) => Promise<void>;
     toggleTask?: (event: EventApi, isComplete: boolean) => Promise<boolean>;
     forceNarrow?: boolean;
+    /** Earliest time slot to display (e.g., "09:00:00") */
+    slotMinTime?: string;
+    /** Latest time slot to display (e.g., "17:00:00") */
+    slotMaxTime?: string;
+    /** Callback when dates change in the calendar view */
+    datesSet?: (startDate: Date, endDate: Date) => void;
+    /** Initial date to display */
+    initialDate?: Date;
 }
 
 export function renderCalendar(
@@ -108,6 +116,14 @@ export function renderCalendar(
         nowIndicator: true,
         scrollTimeReset: false,
         dayMaxEvents: true,
+        ...(settings?.slotMinTime && { slotMinTime: settings.slotMinTime }),
+        ...(settings?.slotMaxTime && { slotMaxTime: settings.slotMaxTime }),
+        ...(settings?.initialDate && { initialDate: settings.initialDate }),
+        ...(settings?.datesSet && {
+            datesSet: (info: { start: Date; end: Date }) => {
+                settings.datesSet!(info.start, info.end);
+            },
+        }),
 
         headerToolbar: !isNarrow
             ? {

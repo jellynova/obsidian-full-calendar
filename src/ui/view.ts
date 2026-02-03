@@ -122,8 +122,22 @@ export class CalendarView extends ItemView {
             this.fullCalendarView.destroy();
             this.fullCalendarView = null;
         }
+        // Restore last viewed date if available
+        const lastViewedDate = this.plugin.settings.lastViewedDate
+            ? new Date(this.plugin.settings.lastViewedDate)
+            : undefined;
+
         this.fullCalendarView = renderCalendar(calendarEl, sources, {
             forceNarrow: this.inSidebar,
+            initialDate: lastViewedDate,
+            datesSet: async (startDate) => {
+                // Save the current view date
+                const dateStr = startDate.toISOString();
+                if (this.plugin.settings.lastViewedDate !== dateStr) {
+                    this.plugin.settings.lastViewedDate = dateStr;
+                    await this.plugin.saveData(this.plugin.settings);
+                }
+            },
             eventClick: async (info) => {
                 try {
                     const isEditable = this.plugin.cache.isEventEditable(

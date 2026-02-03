@@ -81,6 +81,29 @@ const combineDateTimeStrings = (date: string, time: string): string | null => {
 
 const DAYS = "UMTWRFS";
 
+/**
+ * Calculate text color (black or white) based on background color brightness.
+ */
+function getTextColorForBackground(bgColor: string): string {
+    // Default to white if color is invalid
+    if (!bgColor || !bgColor.startsWith("#")) {
+        return "white";
+    }
+    const m = bgColor
+        .slice(1)
+        .match(bgColor.length === 7 ? /(\S{2})/g : /(\S{1})/g);
+    if (m) {
+        const r = parseInt(m[0], 16);
+        const g = parseInt(m[1], 16);
+        const b = parseInt(m[2], 16);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        if (brightness > 150) {
+            return "black";
+        }
+    }
+    return "white";
+}
+
 export function dateEndpointsToFrontmatter(
     start: Date,
     end: Date,
@@ -110,6 +133,11 @@ export function toEventInput(
         id,
         title: frontmatter.title,
         allDay: frontmatter.allDay,
+        // Apply individual event color if specified in frontmatter
+        ...(frontmatter.color && {
+            color: frontmatter.color,
+            textColor: getTextColorForBackground(frontmatter.color),
+        }),
     };
     if (frontmatter.type === "recurring") {
         event = {

@@ -61,6 +61,8 @@ export const TimeSchema = z.discriminatedUnion("allDay", [
 export const CommonSchema = z.object({
     title: z.string(),
     id: z.string().optional(),
+    /** Custom color for this event (hex format, e.g., "#ff0000") */
+    color: z.string().optional(),
 });
 
 export const EventSchema = z.discriminatedUnion("type", [
