@@ -13,6 +13,13 @@ const calendarOptionsSchema = z.discriminatedUnion("type", [
         username: z.string(),
         password: z.string(),
     }),
+    z.object({
+        type: z.literal("ews"),
+        name: z.string(),
+        url: z.string().url(),
+        username: z.string(),
+        password: z.string(),
+    }),
 ]);
 
 const colorValidator = z.object({ color: z.string() });
@@ -63,6 +70,19 @@ export function makeDefaultPartialCalendarSource(
                 .getPropertyValue("--interactive-accent")
                 .trim(),
             url: "https://caldav.icloud.com",
+        };
+    }
+
+    if (type === "ews") {
+        return {
+            type: "ews",
+            color: getComputedStyle(document.body)
+                .getPropertyValue("--interactive-accent")
+                .trim(),
+            name: "Exchange Calendar",
+            url: "",
+            username: "",
+            password: "",
         };
     }
 

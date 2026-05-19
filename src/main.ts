@@ -19,6 +19,7 @@ import FullNoteCalendar from "./calendars/FullNoteCalendar";
 import DailyNoteCalendar from "./calendars/DailyNoteCalendar";
 import ICSCalendar from "./calendars/ICSCalendar";
 import CalDAVCalendar from "./calendars/CalDAVCalendar";
+import EWSCalendar from "./calendars/EWSCalendar";
 
 export default class FullCalendarPlugin extends Plugin {
     settings: FullCalendarSettings = DEFAULT_SETTINGS;
@@ -53,6 +54,16 @@ export default class FullCalendarPlugin extends Plugin {
                       },
                       info.url,
                       info.homeUrl
+                  )
+                : null,
+        ews: (info) =>
+            info.type === "ews"
+                ? new EWSCalendar(
+                      info.color,
+                      info.name,
+                      info.url,
+                      info.username,
+                      info.password
                   )
                 : null,
         FOR_TEST_ONLY: () => null,

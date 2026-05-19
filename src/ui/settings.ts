@@ -89,6 +89,7 @@ export function addCalendarButton(
                     icloud: "iCloud",
                     caldav: "CalDAV",
                     ical: "Remote (.ics format)",
+                    ews: "Exchange (EWS)",
                 }))
         )
         .addExtraButton((button) => {

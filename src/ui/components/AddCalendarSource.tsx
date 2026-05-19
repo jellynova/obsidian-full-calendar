@@ -216,6 +216,34 @@ function PasswordInput<T extends Partial<CalendarInfo>>({
     );
 }
 
+function NameInput<T extends Partial<CalendarInfo>>({
+    source,
+    changeListener,
+}: BasicProps<T>) {
+    let sourceWithName = source as SourceWith<T, { name: undefined }>;
+    return (
+        <div className="setting-item">
+            <div className="setting-item-info">
+                <div className="setting-item-name">Calendar Name</div>
+                <div className="setting-item-description">
+                    Display name for this calendar
+                </div>
+            </div>
+            <div className="setting-item-control">
+                <input
+                    required
+                    type="text"
+                    value={sourceWithName.name || ""}
+                    onChange={changeListener((x) => ({
+                        ...sourceWithName,
+                        name: x,
+                    }))}
+                />
+            </div>
+        </div>
+    );
+}
+
 interface AddCalendarProps {
     source: Partial<CalendarInfo>;
     directories: string[];
@@ -230,6 +258,7 @@ export const AddCalendarSource = ({
     submit,
 }: AddCalendarProps) => {
     const isCalDAV = source.type === "caldav";
+    const isEWS = source.type === "ews";
 
     const [setting, setSettingState] = useState(source);
     const [submitting, setSubmitingState] = useState(false);
@@ -279,19 +308,27 @@ export const AddCalendarSource = ({
                         headings={headings}
                     />
                 )}
-                {source.type === "ical" || source.type === "caldav" ? (
+                {(source.type === "ical" ||
+                    source.type === "caldav" ||
+                    isEWS) && (
                     <UrlInput
                         source={setting}
                         changeListener={makeChangeListener}
                     />
-                ) : null}
-                {isCalDAV && (
+                )}
+                {isEWS && (
+                    <NameInput
+                        source={setting}
+                        changeListener={makeChangeListener}
+                    />
+                )}
+                {(isCalDAV || isEWS) && (
                     <UsernameInput
                         source={setting}
                         changeListener={makeChangeListener}
                     />
                 )}
-                {isCalDAV && (
+                {(isCalDAV || isEWS) && (
                     <PasswordInput
                         source={setting}
                         changeListener={makeChangeListener}
